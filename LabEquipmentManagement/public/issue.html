@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Issue and Return</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LAB MANAGEMENT</h2>
+    <a href="index.html">Home</a>
+    <a href="equipment.html">Equipment</a>
+    <a href="users.html">Users</a>
+    <a href="issue.html">Issue & Return</a>
+    <a href="reports.html">Reports</a>
+</div>
+
+<div class="main">
+    <h1>Issue & Return Management</h1>
+    <p>Manage laboratory equipment issue and return records.</p>
+    <div class="page-banner"
+style="background-image:url('https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=1200')">
+  <div class="banner-text">
+    <h2>Issue & Return</h2>
+    <p>Track laboratory equipment</p>
+  </div>
+</div>
+
+    <div class="card">
+        <h3>Issue Equipment</h3>
+
+        <form id="issueForm">
+            <input type="number" id="equipment_id"
+                   placeholder="Equipment ID" required>
+
+            <input type="number" id="user_id"
+                   placeholder="User ID" required>
+
+            <input type="date" id="issue_date" required>
+
+            <button type="submit">Issue Equipment</button>
+        </form>
+    </div>
+
+    <br>
+
+    <div class="card">
+        <h3>Issue Records</h3>
+
+        <table border="1" width="100%" cellpadding="10">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Equipment ID</th>
+                    <th>User ID</th>
+                    <th>Issue Date</th>
+                    <th>Return Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="issueList"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+
+// Issue Equipment
+const form = document.getElementById('issueForm');
+
+form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    try {
+        const data = {
+            equipment_id: document.getElementById('equipment_id').value,
+            user_id: document.getElementById('user_id').value,
+            issue_date: document.getElementById('issue_date').value
+        };
+
+        const response = await fetch('/issue-equipment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.text();
+        alert(result);
+
+        if (response.ok) {
+            form.reset();
+            loadIssues();
+        }
+
+    } catch (error) {
+        alert('Error issuing equipment');
+        console.log(error);
+    }
+});
+
+
+// Load Issue Records
+async function loadIssues() {
+    try {
+        const response = await fetch('/issue-records');
+        const data = await response.json();
+
+        const list = document.getElementById('issueList');
+        list.innerHTML = '';
+
+        data.forEach(item => {
+            list.innerHTML += `
+                <tr>
+                    <td>${item.id}</td>
+                    <td>${item.equipment_id}</td>
+                    <td>${item.user_id}</td>
+                    <td>${item.issue_date ? new Date(item.issue_date).toLocaleDateString() : '-'}</td>
+                    <td>${item.return_date ? new Date(item.return_date).toLocaleDateString() : '-'}</td>
+                    <td>${item.status}</td>
+                    <td>
+                        ${
+                            item.status === 'Issued'
+                            ? `<button onclick="returnEquipment(${item.id})">
+                                  Return
+                               </button>`
+                            : 'Returned'
+                        }
+                    </td>
+                </tr>
+            `;
+        });
+
+    } catch (error) {
+        console.log('Error loading issue records:', error);
+    }
+}
+
+
+// Return Equipment
+async function returnEquipment(id) {
+
+    if (!confirm('Are you sure you want to return this equipment?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/return-equipment/' + id, {
+            method: 'PUT'
+        });
+
+        const result = await response.text();
+        alert(result);
+
+        if (response.ok) {
+            loadIssues();
+        }
+
+    } catch (error) {
+        alert('Error returning equipment');
+        console.log(error);
+    }
+}
+
+
+// Load page
+loadIssues();
+
+</script>
+
+</body>
+</html>

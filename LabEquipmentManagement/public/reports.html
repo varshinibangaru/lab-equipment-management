@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reports</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Lab Management</h2>
+    <a href="index.html">Dashboard</a>
+    <a href="equipment.html">Equipment</a>
+    <a href="users.html">Users</a>
+    <a href="issue.html">Issue & Return</a>
+    <a href="reports.html">Reports</a>
+</div>
+
+<div class="main">
+    <h1>Reports</h1>
+    <p>Equipment Issue and Return Details</p>
+    <div class="page-banner"
+style="background-image:url('https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=1200')">
+  <div class="banner-text">
+    <h2>Lab Management Reports</h2>
+    <p>View equipment issue and return details</p>
+  </div>
+</div>
+
+    <input type="text" id="search"
+           placeholder="Search equipment or student..."
+           onkeyup="loadReports()">
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Equipment</th>
+                <th>Student</th>
+                <th>Roll Number</th>
+                <th>Issue Date</th>
+                <th>Return Date</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+
+        <tbody id="reportTable"></tbody>
+    </table>
+</div>
+
+<script>
+async function loadReports() {
+
+    const response = await fetch('/all-reports');
+    const reports = await response.json();
+
+    const search = document.getElementById('search')
+                          .value.toLowerCase();
+
+    const table = document.getElementById('reportTable');
+    table.innerHTML = '';
+
+    reports
+    .filter(r =>
+    String(r.equipment_name || '').toLowerCase().includes(search) ||
+    String(r.user_name || '').toLowerCase().includes(search) ||
+    String(r.roll_no || '').toLowerCase().includes(search)
+)
+    .forEach(r => {
+
+        table.innerHTML += `
+            <tr>
+                <td>${r.id}</td>
+                <td>${r.equipment_name}</td>
+                <td>${r.user_name}</td>
+                <td>${r.roll_no}</td>
+                <td>${r.issue_date ? new Date(r.issue_date).toLocaleDateString() : '-'}</td>
+                <td>${r.return_date ? new Date(r.return_date).toLocaleDateString() : '-'}</td>
+                <td>${r.status}</td>
+            </tr>
+        `;
+    });
+}
+
+loadReports();
+</script>
+
+</body>
+</html>

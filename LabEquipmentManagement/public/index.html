@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lab Equipment Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LAB MANAGEMENT</h2>
+
+    <a href="index.html">Home</a>
+    <a href="equipment.html">Equipment</a>
+    <a href="users.html">Users</a>
+    <a href="issue.html">Issue & Return</a>
+    <a href="reports.html">Reports</a>
+</div>
+
+<div class="main">
+    <h1>College Lab Equipment Management System</h1>
+    <p>Welcome to Lab Management Dashboard</p>
+     <!-- Dashboard Image -->
+    <div class="page-banner" style="background-image: url('https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=1200')">
+        <div class="banner-text">
+            <h2>Welcome to Lab Management</h2>
+            <p>Manage your laboratory equipment easily</p>
+        </div>
+    </div>
+
+
+    <div class="cards">
+        <div class="card">
+            <h3>Total Equipment</h3>
+            <h2 id="total">0</h2>
+        </div>
+
+        <div class="card">
+            <h3>Available Equipment</h3>
+            <h2 id="available">0</h2>
+        </div>
+
+        <div class="card">
+            <h3>Issued Equipment</h3>
+            <h2 id="issuedCount">0</h2>
+        </div>
+
+        <div class="card">
+            <h3>Total Users</h3>
+            <h2 id="users">0</h2>
+        </div>
+    </div>
+
+    <h2>Welcome!</h2>
+    <p>Manage your college laboratory equipment easily.</p>
+</div>
+
+<script>
+
+async function loadDashboard() {
+    try {
+        // Get equipment details
+        const equipmentResponse = await fetch('/equipment');
+        const equipment = await equipmentResponse.json();
+
+        // Get user details
+        const usersResponse = await fetch('/users');
+        const users = await usersResponse.json();
+
+        // Get issue records
+        const issueResponse = await fetch('/issue-records');
+        const issues = await issueResponse.json();
+
+        // Total Equipment
+        const total = equipment.reduce(
+            (sum, item) => sum + Number(item.quantity), 0
+        );
+
+        // Available Equipment
+        const available = equipment.reduce(
+            (sum, item) => sum + Number(item.available), 0
+        );
+
+        // Issued Equipment (active records)
+        const issued = issues.filter(
+            item => item.status === 'Issued'
+        ).length;
+
+        // Display values
+        document.getElementById('total').innerText = total;
+
+        document.getElementById('available').innerText = available;
+
+        document.getElementById('issuedCount').innerText = issued;
+
+        document.getElementById('users').innerText = users.length;
+
+    } catch (error) {
+        console.log("Dashboard loading error:", error);
+    }
+}
+
+loadDashboard();
+
+</script>
+
+</body>
+</html>

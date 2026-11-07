@@ -1,0 +1,192 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LAB MANAGEMENT</h2>
+    <a href="index.html">Home</a>
+    <a href="equipment.html">Equipment</a>
+    <a href="users.html">Users</a>
+    <a href="issue.html">Issue & Return</a>
+    <a href="reports.html">Reports</a>
+</div>
+
+<div class="main">
+    <h1>User Management</h1>
+    <p>Manage Students and Faculty Details</p>
+    <div class="page-banner"
+style="background-image:url('https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=1200')">
+  <div class="banner-text">
+    <h2>User Management</h2>
+    <p>Manage students and faculty</p>
+  </div>
+</div>
+
+    <div class="card">
+        <h3>Add New User</h3>
+
+        <form id="userForm">
+            <input type="text" id="name" placeholder="User Name" required>
+            <input type="text" id="roll_no" placeholder="Roll Number" required>
+            <input type="text" id="department" placeholder="Department" required>
+
+            <select id="role">
+                <option value="Student">Student</option>
+                <option value="Faculty">Faculty</option>
+            </select>
+
+            <input type="text" id="phone" placeholder="Phone Number" required>
+
+            <button type="submit">Add User</button>
+        </form>
+    </div>
+
+    <br>
+
+    <div class="card">
+        <h3>Search User</h3>
+        <input type="text" id="search" placeholder="Enter Name or Roll Number">
+        <button onclick="searchUsers()">Search</button>
+        <button onclick="loadUsers()">Show All</button>
+    </div>
+
+    <br>
+
+    <div class="card">
+        <h3>User Details</h3>
+
+        <table border="1" width="100%" cellpadding="10">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Roll No</th>
+                    <th>Department</th>
+                    <th>Role</th>
+                    <th>Phone</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody id="userList"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const form = document.getElementById('userForm');
+
+form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const data = {
+        name: document.getElementById('name').value,
+        roll_no: document.getElementById('roll_no').value,
+        department: document.getElementById('department').value,
+        role: document.getElementById('role').value,
+        phone: document.getElementById('phone').value
+    };
+
+    const response = await fetch('/add-user', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+
+    alert(await response.text());
+    form.reset();
+    loadUsers();
+});
+
+async function loadUsers() {
+    const response = await fetch('/users');
+    const data = await response.json();
+    displayUsers(data);
+}
+
+async function searchUsers() {
+    const value = document.getElementById('search').value;
+
+    const response = await fetch(
+        '/search-user?value=' + encodeURIComponent(value)
+    );
+
+    const data = await response.json();
+    displayUsers(data);
+}
+
+function displayUsers(data) {
+    const list = document.getElementById('userList');
+    list.innerHTML = '';
+
+    data.forEach(user => {
+        list.innerHTML += `
+            <tr>
+                <td>${user.id}</td>
+                <td>${user.name}</td>
+                <td>${user.roll_no}</td>
+                <td>${user.department}</td>
+                <td>${user.role}</td>
+                <td>${user.phone}</td>
+                <td>
+                    <button onclick="editUser(${user.id}, '${user.name}', '${user.roll_no}', '${user.department}', '${user.role}', '${user.phone}')">Edit</button>
+                    <button onclick="deleteUser(${user.id})">Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+async function editUser(id, name, roll_no, department, role, phone) {
+    const newName = prompt('Enter Name', name);
+    if (newName === null) return;
+
+    const newRoll = prompt('Enter Roll Number', roll_no);
+    if (newRoll === null) return;
+
+    const newDepartment = prompt('Enter Department', department);
+    if (newDepartment === null) return;
+
+    const newRole = prompt('Enter Role', role);
+    if (newRole === null) return;
+
+    const newPhone = prompt('Enter Phone', phone);
+    if (newPhone === null) return;
+
+    const response = await fetch('/update-user/' + id, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            name: newName,
+            roll_no: newRoll,
+            department: newDepartment,
+            role: newRole,
+            phone: newPhone
+        })
+    });
+
+    alert(await response.text());
+    loadUsers();
+}
+
+async function deleteUser(id) {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+
+    const response = await fetch('/delete-user/' + id, {
+        method: 'DELETE'
+    });
+
+    alert(await response.text());
+    loadUsers();
+}
+
+loadUsers();
+</script>
+
+</body>
+</html>

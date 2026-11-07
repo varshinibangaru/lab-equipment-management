@@ -1,0 +1,265 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Equipment Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LAB MANAGEMENT</h2>
+    <a href="index.html">Home</a>
+    <a href="equipment.html">Equipment</a>
+    <a href="users.html">Users</a>
+    <a href="issue.html">Issue & Return</a>
+    <a href="reports.html">Reports</a>
+</div>
+
+<div class="main">
+    <h1>Equipment Management</h1>
+    <p>Add, search, update and delete lab equipment.</p>
+    <div class="page-banner"
+style="background-image:url('https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=1200')">
+  <div class="banner-text">
+    <h2>Equipment Management</h2>
+    <p>Manage laboratory inventory</p>
+  </div>
+</div>
+
+    <div class="card">
+        <h3>Add Equipment</h3>
+
+        <form id="equipmentForm">
+            <input type="text" id="name" placeholder="Equipment Name" required>
+            <input type="text" id="category" placeholder="Category" required>
+            <input type="number" id="quantity" placeholder="Quantity" min="0" required>
+            <input type="number" id="available" placeholder="Available Quantity" min="0" required>
+
+            <select id="status">
+                <option value="Available">Available</option>
+                <option value="Unavailable">Unavailable</option>
+            </select>
+
+            <button type="submit">Add Equipment</button>
+        </form>
+    </div>
+
+    <br>
+
+    <div class="card">
+        <h3>Search Equipment</h3>
+        <input type="text" id="search" placeholder="Search by equipment name">
+        <button onclick="searchEquipment()">Search</button>
+        <button onclick="loadEquipment()">Show All</button>
+    </div>
+
+    <br>
+
+    <div class="card">
+        <h3>Equipment Details</h3>
+
+        <table border="1" width="100%" cellpadding="10">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Quantity</th>
+                    <th>Available</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody id="equipmentList"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+
+// Add Equipment
+const form = document.getElementById('equipmentForm');
+
+form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    try {
+        const data = {
+            name: document.getElementById('name').value,
+            category: document.getElementById('category').value,
+            quantity: document.getElementById('quantity').value,
+            available: document.getElementById('available').value,
+            status: document.getElementById('status').value
+        };
+
+        const response = await fetch('/add-equipment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.text();
+        alert(result);
+
+        if (response.ok) {
+            form.reset();
+            loadEquipment();
+        }
+
+    } catch (error) {
+        alert('Error adding equipment');
+        console.log(error);
+    }
+});
+
+
+// Load Equipment
+async function loadEquipment() {
+    try {
+        const response = await fetch('/equipment');
+        const data = await response.json();
+
+        displayEquipment(data);
+
+    } catch (error) {
+        console.log('Error loading equipment:', error);
+    }
+}
+
+
+// Search Equipment
+async function searchEquipment() {
+    const name = document.getElementById('search').value;
+
+    try {
+        const response = await fetch(
+            '/search-equipment?name=' + encodeURIComponent(name)
+        );
+
+        const data = await response.json();
+        displayEquipment(data);
+
+    } catch (error) {
+        console.log('Search error:', error);
+    }
+}
+
+
+// Display Equipment
+function displayEquipment(data) {
+    const list = document.getElementById('equipmentList');
+
+    list.innerHTML = '';
+
+    data.forEach(item => {
+        list.innerHTML += `
+            <tr>
+                <td>${item.id}</td>
+                <td>${item.name}</td>
+                <td>${item.category}</td>
+                <td>${item.quantity}</td>
+                <td>${item.available}</td>
+                <td>${item.status}</td>
+                <td>
+                    <button onclick="editEquipment(${item.id})">
+                        Edit
+                    </button>
+
+                    <button onclick="deleteEquipment(${item.id})">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+
+// Edit Equipment
+async function editEquipment(id) {
+    try {
+        const response = await fetch('/equipment');
+        const data = await response.json();
+
+        const item = data.find(e => e.id == id);
+
+        if (!item) return alert('Equipment not found');
+
+        const name = prompt('Enter Equipment Name', item.name);
+        if (name === null) return;
+
+        const category = prompt('Enter Category', item.category);
+        if (category === null) return;
+
+        const quantity = prompt('Enter Quantity', item.quantity);
+        if (quantity === null) return;
+
+        const available = prompt('Enter Available Quantity', item.available);
+        if (available === null) return;
+
+        const status = prompt('Enter Status', item.status);
+        if (status === null) return;
+
+        if (Number(available) > Number(quantity) ||
+            Number(available) < 0 || Number(quantity) < 0) {
+            return alert('Enter valid quantities');
+        }
+
+        const updateResponse = await fetch('/update-equipment/' + id, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name,
+                category,
+                quantity,
+                available,
+                status
+            })
+        });
+
+        alert(await updateResponse.text());
+
+        if (updateResponse.ok) loadEquipment();
+
+    } catch (error) {
+        alert('Error updating equipment');
+        console.log(error);
+    }
+}
+
+
+// Delete Equipment
+async function deleteEquipment(id) {
+    if (!confirm('Are you sure you want to delete this equipment?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/delete-equipment/' + id, {
+            method: 'DELETE'
+        });
+
+        alert(await response.text());
+
+        if (response.ok) loadEquipment();
+
+    } catch (error) {
+        alert('Error deleting equipment');
+        console.log(error);
+    }
+}
+
+
+// Load page
+loadEquipment();
+
+</script>
+
+</body>
+</html>
